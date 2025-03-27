@@ -11,7 +11,7 @@ jobs:
         id: release
         run: |
           RELEASE_DATA=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/${{ github.repository }}/releases/latest")
+          "https://api.github.com/repos/frostnova721/animestream/releases/latest")
 
           LATEST_TAG=$(echo "$RELEASE_DATA" | jq -r '.tag_name')
           RELEASE_NOTES=$(echo "$RELEASE_DATA" | jq -r '.body')
@@ -27,7 +27,7 @@ jobs:
           EXE_LINK=""
           
           ASSETS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-           "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ env.LATEST_TAG }}" | jq -r '.assets[] | "\(.browser_download_url) \(.name)"')
+           "https://api.github.com/repos/frostnova721/animestream/releases/tags/${{ env.LATEST_TAG }}" | jq -r '.assets[] | "\(.browser_download_url) \(.name)"')
 
           while read -r ASSET_URL FILE_NAME; do
             if [[ "$FILE_NAME" == *.apk ]]; then
@@ -49,7 +49,7 @@ jobs:
             "embeds": [{
               "title": "🚀 New Release: '${{ env.LATEST_TAG }}'",
               "description": "'"${{ env.RELEASE_NOTES }}"'\n\n**📂 Assets:**\n📱 APK: [Download](${{ env.APK_LINK }})\n🖥 EXE: [Download](${{ env.EXE_LINK }})",
-              "url": "https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }}"
+              "url": "https://github.com/frostnova721/animestream/releases/tag/${{ env.LATEST_TAG }}"
             }]
           }' $DISCORD_WEBHOOK_URL
 
