@@ -25,7 +25,7 @@ jobs:
       - name: Get and Categorize Assets
         id: assets
         run: |
-          TARGET_REPO="owner/repo"  # Change this to the correct repository
+          TARGET_REPO="frostnova721/animestream"  # Change this to the correct repository
 
           # Fetch release data
           RELEASE_JSON=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
