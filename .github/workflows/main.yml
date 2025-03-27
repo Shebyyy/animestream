@@ -27,11 +27,25 @@ jobs:
         run: |
           TARGET_REPO="owner/repo"  # Change this to the correct repository
 
+          # Fetch release data
+          RELEASE_JSON=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+           "https://api.github.com/repos/$TARGET_REPO/releases/latest")
+
+          echo "Debugging Release JSON:"
+          echo "$RELEASE_JSON"  # Debug output
+
+          # Check if assets exist
+          ASSETS=$(echo "$RELEASE_JSON" | jq -r '.assets | if . then .[] | "\(.browser_download_url) \(.name)" else empty end')
+
+          if [[ -z "$ASSETS" ]]; then
+            echo "No assets found in the latest release!"
+            echo "APK_LINK=No APK available" >> $GITHUB_ENV
+            echo "EXE_LINK=No EXE available" >> $GITHUB_ENV
+            exit 0
+          fi
+
           APK_LINK=""
           EXE_LINK=""
-          
-          ASSETS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-           "https://api.github.com/repos/$TARGET_REPO/releases/latest" | jq -r '.assets[] | "\(.browser_download_url) \(.name)"')
 
           while read -r ASSET_URL FILE_NAME; do
             if [[ "$FILE_NAME" == *.apk ]]; then
