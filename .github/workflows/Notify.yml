@@ -7,6 +7,12 @@ on:
 
 jobs:
   notify:
+    # Run only if:
+    # - it's a published release that is NOT a pre-release
+    # - OR it's a prerelease
+    if: |
+      (github.event.action == 'prereleased') ||
+      (github.event.action == 'published' && github.event.release.prerelease == false)
     runs-on: ubuntu-latest
     steps:
       - name: Cloning repository
