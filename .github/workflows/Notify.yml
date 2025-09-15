@@ -2,9 +2,6 @@ name: Notify Release
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - 'v*'
   release:
     types: [published, prereleased]
 
