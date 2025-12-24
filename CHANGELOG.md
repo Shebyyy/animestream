@@ -5,6 +5,7 @@
 * [8414845](https://github.com/Shebyyy/animestream/commit/8414845): feat: new theme, some tweaks
 
 ### 🐛 Bug Fixes & Improvements
+* [266435a](https://github.com/Shebyyy/animestream/commit/266435a): fix: something
 * [1997dee](https://github.com/Shebyyy/animestream/commit/1997dee): fix: something
 * [3006a47](https://github.com/Shebyyy/animestream/commit/3006a47): fix: Windows artifact upload paths
 * [1d27642](https://github.com/Shebyyy/animestream/commit/1d27642): fix: remove AppImage
