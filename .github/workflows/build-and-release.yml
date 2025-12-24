@@ -313,8 +313,8 @@ jobs:
           wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
 
-          # Create AppImage
-          ARCH=x86_64 ./appimagetool-x86_64.AppImage "$APPDIR" "animestream-${{ needs.extract-version.outputs.version }}-x86_64.AppImage"
+          # Create AppImage (no-appstream to avoid FUSE requirement)
+          ARCH=x86_64 ./appimagetool-x86_64.AppImage --no-appstream "$APPDIR" "animestream-${{ needs.extract-version.outputs.version }}-x86_64.AppImage"
 
       - name: Create deb package
         run: |
@@ -488,12 +488,13 @@ jobs:
         with:
           name: windows-builds
           path: |
-            build/windows/x64/runner/Release/*.zip
+            build/windows/x64/runner/*.zip
             build/windows/x64/installer/*.exe
             build/installer/*.exe
             build/windows/innosetup/*.exe
             *.exe
           retention-days: 30
+
 
   # CREATE RELEASE
   create-release:
