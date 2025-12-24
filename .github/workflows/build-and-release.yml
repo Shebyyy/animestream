@@ -351,7 +351,7 @@ jobs:
 
           # Copy icon
           if [ -f "lib/assets/icons/logo.png" ]; then
-            cp lib/assets/icons/logo.png rpmbuild-root/usr/share/icons/hicolor/512x512/apps/animestream.png"
+            cp lib/assets/icons/logo.png rpmbuild-root/usr/share/icons/hicolor/512x512/apps/animestream.png
           fi
 
           # Create spec file
@@ -391,7 +391,7 @@ jobs:
         run: |
           cd build/linux/x64/release
           zip -r ../../../animestream-${{ needs.extract-version.outputs.version }}-linux-x64.zip bundle/
-
+          
       - name: Create Flatpak
         run: |
           # Create Flatpak manifest
