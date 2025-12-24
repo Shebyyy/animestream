@@ -1,10 +1,13 @@
 
 ### 🎉 New Features
+* [1902148](https://github.com/Shebyyy/animestream/commit/1902148): feat: add Flatpak build to Linux CI/CD
 * [1a30796](https://github.com/Shebyyy/animestream/commit/1a30796): feat: add post-release-notes job for automated changelog
 * [a66782a](https://github.com/Shebyyy/animestream/commit/a66782a): feat: still on downloader (UI!!)
 * [8414845](https://github.com/Shebyyy/animestream/commit/8414845): feat: new theme, some tweaks
 
 ### 🐛 Bug Fixes & Improvements
+* [0f977df](https://github.com/Shebyyy/animestream/commit/0f977df): fix: correct Flatpak build with proper configuration
+* [8079d47](https://github.com/Shebyyy/animestream/commit/8079d47): fix: someting
 * [266435a](https://github.com/Shebyyy/animestream/commit/266435a): fix: something
 * [1997dee](https://github.com/Shebyyy/animestream/commit/1997dee): fix: something
 * [3006a47](https://github.com/Shebyyy/animestream/commit/3006a47): fix: Windows artifact upload paths
@@ -67,4 +70,7 @@
 * [306b5fd](https://github.com/Shebyyy/animestream/commit/306b5fd): refactor making cards, add amoled background
 * [b5156a6](https://github.com/Shebyyy/animestream/commit/b5156a6): refactored enums, made it a separarte file
 * [ac87b61](https://github.com/Shebyyy/animestream/commit/ac87b61): refactor and changes
+
+### 🧹 Chores & Documentation
+* [43c8008](https://github.com/Shebyyy/animestream/commit/43c8008): docs: add comprehensive installation guide
 
