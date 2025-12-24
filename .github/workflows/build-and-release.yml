@@ -87,21 +87,17 @@ jobs:
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 -d > android/app/release-keystore.jks
-            cat > android/key.properties << EOF
-            storePassword=$STORE_PASSWORD
-            keyPassword=$KEY_PASSWORD
-            keyAlias=$KEY_ALIAS
-            storeFile=release-keystore.jks
-            EOF
-            echo "✓ Keystore configured for signing"
+            echo "storePassword=$STORE_PASSWORD" > android/key.properties
+            echo "keyPassword=$KEY_PASSWORD" >> android/key.properties
+            echo "keyAlias=$KEY_ALIAS" >> android/key.properties
+            echo "storeFile=release-keystore.jks" >> android/key.properties
+            echo "Keystore configured for signing"
           else
-            echo "⚠️  No keystore configured - using debug signing"
-            cat > android/key.properties << EOF
-            storePassword=
-            keyPassword=
-            keyAlias=androiddebugkey
-            storeFile=/tmp/debug.keystore
-            EOF
+            echo "No keystore configured - using debug signing"
+            echo "storePassword=" > android/key.properties
+            echo "keyPassword=" >> android/key.properties
+            echo "keyAlias=androiddebugkey" >> android/key.properties
+            echo "storeFile=/tmp/debug.keystore" >> android/key.properties
             keytool -genkey -v -keystore /tmp/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
 
@@ -198,21 +194,17 @@ jobs:
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 -d > android/app/release-keystore.jks
-            cat > android/key.properties << EOF
-            storePassword=$STORE_PASSWORD
-            keyPassword=$KEY_PASSWORD
-            keyAlias=$KEY_ALIAS
-            storeFile=release-keystore.jks
-            EOF
-            echo "✓ Keystore configured for signing"
+            echo "storePassword=$STORE_PASSWORD" > android/key.properties
+            echo "keyPassword=$KEY_PASSWORD" >> android/key.properties
+            echo "keyAlias=$KEY_ALIAS" >> android/key.properties
+            echo "storeFile=release-keystore.jks" >> android/key.properties
+            echo "Keystore configured for signing"
           else
-            echo "⚠️  No keystore configured - using debug signing"
-            cat > android/key.properties << EOF
-            storePassword=
-            keyPassword=
-            keyAlias=androiddebugkey
-            storeFile=/tmp/debug.keystore
-            EOF
+            echo "No keystore configured - using debug signing"
+            echo "storePassword=" > android/key.properties
+            echo "keyPassword=" >> android/key.properties
+            echo "keyAlias=androiddebugkey" >> android/key.properties
+            echo "storeFile=/tmp/debug.keystore" >> android/key.properties
             keytool -genkey -v -keystore /tmp/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
 
@@ -503,140 +495,6 @@ jobs:
             *.exe
           retention-days: 30
 
-  # MACOS BUILDS
-  build-macos:
-    name: macOS Build
-    runs-on: macos-latest
-    needs: extract-version
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: 'stable'
-          cache: true
-
-      - name: Get Flutter version
-        run: flutter --version
-
-      - name: Enable macOS desktop
-        run: flutter config --enable-macos-desktop
-
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Create default .env file
-        run: |
-          if [ -f ".env_example" ]; then
-            cp .env_example .env
-          else
-            echo "# Empty env file for CI/CD" > .env
-          fi
-
-      - name: Build macOS
-        run: |
-          flutter build macos \
-            --release \
-            --build-number=${{ needs.extract-version.outputs.version_code }} \
-            --build-name=${{ needs.extract-version.outputs.version }}
-
-      - name: Create DMG
-        run: |
-          # Create a temporary directory for DMG content
-          mkdir dmg_temp
-
-          # Copy the app bundle
-          cp -R build/macos/Build/Products/Release/animestream.app dmg_temp/
-
-          # Create symlink to Applications folder
-          ln -s /Applications dmg_temp/Applications
-
-          # Create DMG using hdiutil
-          hdiutil create \
-            -volname "animestream" \
-            -srcfolder dmg_temp \
-            -ov \
-            -format UDZO \
-            animestream-${{ needs.extract-version.outputs.version }}-macos.dmg
-
-      - name: Create app bundle zip
-        run: |
-          cd build/macos/Build/Products/Release
-          zip -r ../../../../animestream-${{ needs.extract-version.outputs.version }}-macos.zip animestream.app
-
-      - name: Upload macOS artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-builds
-          path: |
-            animestream-*.dmg
-            animestream-*-macos.zip
-          retention-days: 30
-
-  # IOS BUILD
-  build-ios:
-    name: iOS Build
-    runs-on: macos-latest
-    needs: extract-version
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: 'stable'
-          cache: true
-
-      - name: Get Flutter version
-        run: flutter --version
-
-      - name: Clean iOS build artifacts
-        run: |
-          cd ios
-          rm -rf Pods/
-          rm -rf build/
-          rm -f Podfile.lock
-          rm -rf Runner.xcworkspace/xcuserdata
-          rm -rf Runner.xcodeproj/xcuserdata
-
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Create default .env file
-        run: |
-          if [ -f ".env_example" ]; then
-            cp .env_example .env
-          else
-            echo "# Empty env file for CI/CD" > .env
-          fi
-
-      - name: Build iOS (no codesign)
-        run: |
-          flutter build ios \
-            --release \
-            --no-codesign \
-            --build-number=${{ needs.extract-version.outputs.version_code }} \
-            --build-name=${{ needs.extract-version.outputs.version }}
-
-      - name: Archive and export IPA
-        run: |
-          cd build/ios/iphoneos
-          zip -r ../../../animestream-${{ needs.extract-version.outputs.version }}-ios-unsigned.ipa Runner.app
-
-      - name: Upload iOS artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-builds
-          path: |
-            animestream-*-ios-unsigned.ipa
-          retention-days: 30
-        continue-on-error: true
-
   # CREATE RELEASE
   create-release:
     name: Create GitHub Release
@@ -647,8 +505,6 @@ jobs:
       - build-android-aab
       - build-linux
       - build-windows
-      - build-macos
-      - build-ios
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.create_release == true || github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
     steps:
       - name: Clone repository
@@ -693,13 +549,6 @@ jobs:
           - **Installer**: EXE setup file with installation wizard
           - **Portable Zip**: Extract and run, no installation required
 
-          ### macOS
-          - **DMG**: Disk image with drag-and-drop installation
-          - **Zip**: App bundle
-
-          ### iOS
-          - **Unsigned IPA**: For testing purposes (sideloading)
-
           ## 🚀 Installation
 
           ### Android
@@ -713,13 +562,6 @@ jobs:
           ### Windows
           - **Installer**: Double-click the .exe file and follow the wizard
           - **Portable**: Extract the zip and run animestream.exe
-
-          ### macOS
-          - **DMG**: Open and drag animestream.app to Applications
-          - **Zip**: Extract and move animestream.app to Applications
-
-          ### iOS
-          The unsigned IPA is for testing. Use AltStore or similar tools to sideload.
 
           ## 📝 Changelog
 
@@ -754,8 +596,5 @@ jobs:
             artifacts/linux-builds/animestream-*-linux-x64.zip
             artifacts/windows-builds/animestream-*.zip
             artifacts/windows-builds/animestream-*.exe
-            artifacts/macos-builds/animestream-*.dmg
-            artifacts/macos-builds/animestream-*-macos.zip
-            artifacts/ios-builds/animestream-*-ios-unsigned.ipa
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
