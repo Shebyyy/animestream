@@ -391,14 +391,14 @@ jobs:
         run: |
           cd build/linux/x64/release
           zip -r ../../../animestream-${{ needs.extract-version.outputs.version }}-linux-x64.zip bundle/
-                
+
       - name: Create Flatpak
         run: |
           # Install Flatpak dependencies
           sudo apt-get update
           sudo apt-get install -y flatpak flatpak-builder
           sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-          sudo flatpak install -y flathub org.freedesktop.Platform//23.08 org.freedesktop.Sdk//23.08
+          sudo flatpak install -y flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
           
           # Create desktop entry file
           cat > com.example.animestream.desktop << 'EOF'
@@ -437,7 +437,7 @@ jobs:
           cat > com.example.animestream.yaml << 'EOF'
           app-id: com.example.animestream
           runtime: org.freedesktop.Platform
-          runtime-version: '23.08'
+          runtime-version: '24.08'
           sdk: org.freedesktop.Sdk
           command: animestream
           finish-args:
@@ -454,6 +454,7 @@ jobs:
               buildsystem: simple
               build-commands:
                 - cp -r bundle /app/animestream
+                - mkdir -p /app/bin
                 - |
                   cat > /app/bin/animestream << 'SCRIPT'
                   #!/bin/bash
@@ -480,6 +481,7 @@ jobs:
           
           # Create single-file bundle
           flatpak build-bundle flatpak-repo animestream-${{ needs.extract-version.outputs.version }}-x86_64.flatpak com.example.animestream
+    
     
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
