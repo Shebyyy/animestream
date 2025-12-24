@@ -78,6 +78,33 @@ jobs:
             echo "# Empty env file for CI/CD" > .env
           fi
 
+      - name: Decode and setup keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > android/app/release-keystore.jks
+            cat > android/key.properties << EOF
+            storePassword=$STORE_PASSWORD
+            keyPassword=$KEY_PASSWORD
+            keyAlias=$KEY_ALIAS
+            storeFile=release-keystore.jks
+            EOF
+            echo "✓ Keystore configured for signing"
+          else
+            echo "⚠️  No keystore configured - using debug signing"
+            cat > android/key.properties << EOF
+            storePassword=
+            keyPassword=
+            keyAlias=androiddebugkey
+            storeFile=/tmp/debug.keystore
+            EOF
+            keytool -genkey -v -keystore /tmp/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
       - name: Build Universal APK
         run: |
           flutter build apk \
@@ -160,6 +187,33 @@ jobs:
             cp .env_example .env
           else
             echo "# Empty env file for CI/CD" > .env
+          fi
+
+      - name: Decode and setup keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > android/app/release-keystore.jks
+            cat > android/key.properties << EOF
+            storePassword=$STORE_PASSWORD
+            keyPassword=$KEY_PASSWORD
+            keyAlias=$KEY_ALIAS
+            storeFile=release-keystore.jks
+            EOF
+            echo "✓ Keystore configured for signing"
+          else
+            echo "⚠️  No keystore configured - using debug signing"
+            cat > android/key.properties << EOF
+            storePassword=
+            keyPassword=
+            keyAlias=androiddebugkey
+            storeFile=/tmp/debug.keystore
+            EOF
+            keytool -genkey -v -keystore /tmp/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
 
       - name: Build AAB
