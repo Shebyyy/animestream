@@ -70,6 +70,14 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Create default .env file
+        run: |
+          if [ -f ".env_example" ]; then
+            cp .env_example .env
+          else
+            echo "# Empty env file for CI/CD" > .env
+          fi
+
       - name: Build Universal APK
         run: |
           flutter build apk \
@@ -146,6 +154,14 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Create default .env file
+        run: |
+          if [ -f ".env_example" ]; then
+            cp .env_example .env
+          else
+            echo "# Empty env file for CI/CD" > .env
+          fi
+
       - name: Build AAB
         run: |
           flutter build appbundle \
@@ -193,7 +209,8 @@ jobs:
             libgtk-3-dev \
             liblzma-dev \
             libstdc++-12-dev \
-            libsecret-1-dev
+            libsecret-1-dev \
+            libwebkit2gtk-4.1-dev
 
       - name: Get Flutter version
         run: flutter --version
@@ -203,6 +220,14 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Create default .env file
+        run: |
+          if [ -f ".env_example" ]; then
+            cp .env_example .env
+          else
+            echo "# Empty env file for CI/CD" > .env
+          fi
 
       - name: Build Linux
         run: |
@@ -393,6 +418,15 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Create default .env file
+        shell: pwsh
+        run: |
+          if (Test-Path ".env_example") {
+            Copy-Item ".env_example" ".env"
+          } else {
+            "# Empty env file for CI/CD" | Out-File -Encoding UTF8 ".env"
+          }
+
       - name: Build Windows
         run: |
           flutter build windows \
@@ -445,6 +479,14 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Create default .env file
+        run: |
+          if [ -f ".env_example" ]; then
+            cp .env_example .env
+          else
+            echo "# Empty env file for CI/CD" > .env
+          fi
 
       - name: Build macOS
         run: |
@@ -507,6 +549,14 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Create default .env file
+        run: |
+          if [ -f ".env_example" ]; then
+            cp .env_example .env
+          else
+            echo "# Empty env file for CI/CD" > .env
+          fi
 
       - name: Build iOS (no codesign)
         run: |
