@@ -39,7 +39,7 @@ jobs:
           echo "Extracted version: $VERSION+$VERSION_CODE"
 
   # ANDROID BUILDS
-  build-android:
+  build-android-apk:
     name: Android Build (APK + AAB)
     runs-on: ubuntu-latest
     needs: extract-version
@@ -468,7 +468,6 @@ jobs:
     needs:
     - extract-version
     - build-android-apk
-    - build-android-aab
     - build-linux
     - build-windows
     - post-release-notes 
@@ -486,8 +485,6 @@ jobs:
         run: |
           echo "Downloaded artifacts:"
           find artifacts -type f
-
-
 
       - name: Collect release assets
         run: |
@@ -519,7 +516,7 @@ jobs:
 
   post-release-notes:
     runs-on: ubuntu-latest
-    needs: [build-android-apk, build-android-aab, build-linux, build-windows]
+    needs: [build-android-apk, build-linux, build-windows]
     permissions:
       contents: write
     steps:
