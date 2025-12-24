@@ -282,40 +282,6 @@ jobs:
             --build-number=${{ needs.extract-version.outputs.version_code }} \
             --build-name=${{ needs.extract-version.outputs.version }}
 
-      - name: Create AppImage
-        run: |
-          # Create AppDir structure
-          APPDIR="AppDir"
-          mkdir -p "$APPDIR/usr/bin"
-          mkdir -p "$APPDIR/usr/share/applications"
-          mkdir -p "$APPDIR/usr/share/icons/hicolor/512x512/apps"
-          mkdir -p "$APPDIR/usr/lib"
-
-          # Copy built files
-          cp -r build/linux/x64/release/bundle/* "$APPDIR/usr/bin/"
-
-          # Create desktop file
-          cat > "$APPDIR/usr/share/applications/animestream.desktop" << 'EOF'
-          [Desktop Entry]
-          Name=animestream
-          Exec=animestream
-          Icon=animestream
-          Type=Application
-          Categories=AudioVideo;Video;
-          EOF
-
-          # Copy icon if exists, otherwise use placeholder
-          if [ -f "lib/assets/icons/logo.png" ]; then
-            cp lib/assets/icons/logo.png "$APPDIR/usr/share/icons/hicolor/512x512/apps/animestream.png"
-          fi
-
-          # Download appimagetool
-          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-          chmod +x appimagetool-x86_64.AppImage
-
-          # Create AppImage (no-appstream to avoid FUSE requirement)
-          ARCH=x86_64 ./appimagetool-x86_64.AppImage --no-appstream "$APPDIR" "animestream-${{ needs.extract-version.outputs.version }}-x86_64.AppImage"
-
       - name: Create deb package
         run: |
           # Install packaging tools
@@ -433,7 +399,6 @@ jobs:
         with:
           name: linux-builds
           path: |
-            animestream-*.AppImage
             animestream-*.deb
             animestream-*.rpm
             animestream-*-linux-x64.zip
@@ -541,7 +506,6 @@ jobs:
           - **AAB**: For Google Play Store
 
           ### Linux
-          - **AppImage**: Universal package, no installation required
           - **deb**: Debian/Ubuntu/Mint
           - **rpm**: Fedora/openSUSE/RHEL
           - **Zip**: Portable binary build
@@ -556,7 +520,6 @@ jobs:
           Download the APK that matches your device architecture, then install it. You may need to enable "Unknown Sources" in your security settings.
 
           ### Linux
-          - **AppImage**: Make it executable: `chmod +x animestream-*.AppImage` and run
           - **deb**: `sudo dpkg -i animestream-*.deb`
           - **rpm**: `sudo rpm -i animestream-*.rpm`
 
@@ -591,7 +554,6 @@ jobs:
           files: |
             artifacts/android-apks/animestream-*.apk
             artifacts/android-aab/animestream-*.aab
-            artifacts/linux-builds/animestream-*.AppImage
             artifacts/linux-builds/animestream-*.deb
             artifacts/linux-builds/animestream-*.rpm
             artifacts/linux-builds/animestream-*-linux-x64.zip
