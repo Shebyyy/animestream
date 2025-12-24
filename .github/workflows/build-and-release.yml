@@ -391,101 +391,96 @@ jobs:
         run: |
           cd build/linux/x64/release
           zip -r ../../../animestream-${{ needs.extract-version.outputs.version }}-linux-x64.zip bundle/
+                
+      - name: Create Flatpak
+        run: |
+          # Install Flatpak dependencies
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+          sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          sudo flatpak install -y flathub org.freedesktop.Platform//23.08 org.freedesktop.Sdk//23.08
           
-- name: Create Flatpak
-  run: |
-    # Install Flatpak dependencies
-    sudo apt-get update
-    sudo apt-get install -y flatpak flatpak-builder
-    sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-    sudo flatpak install -y flathub org.freedesktop.Platform//23.08 org.freedesktop.Sdk//23.08
+          # Create desktop entry file
+          cat > com.example.animestream.desktop << 'EOF'
+          [Desktop Entry]
+          Name=AnimeStream
+          Comment=Watch anime with multiple sources
+          Exec=animestream
+          Icon=com.example.animestream
+          Type=Application
+          Categories=AudioVideo;Video;Player;
+          EOF
+          
+          # Create AppStream metadata
+          cat > com.example.animestream.metainfo.xml << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <component type="desktop-application">
+            <id>com.example.animestream</id>
+            <name>AnimeStream</name>
+            <summary>Watch anime from multiple sources</summary>
+            <metadata_license>CC0-1.0</metadata_license>
+            <project_license>MIT</project_license>
+            <description>
+              <p>AnimeStream is a multi-source anime streaming application.</p>
+            </description>
+            <launchable type="desktop-id">com.example.animestream.desktop</launchable>
+            <provides>
+              <binary>animestream</binary>
+            </provides>
+          </component>
+          EOF
+          
+          # Copy icon (using logo.png from assets)
+          cp lib/assets/icons/logo.png icon.png
+          
+          # Create Flatpak manifest
+          cat > com.example.animestream.yaml << 'EOF'
+          app-id: com.example.animestream
+          runtime: org.freedesktop.Platform
+          runtime-version: '23.08'
+          sdk: org.freedesktop.Sdk
+          command: animestream
+          finish-args:
+            - --socket=wayland
+            - --socket=fallback-x11
+            - --share=ipc
+            - --share=network
+            - --device=dri
+            - --socket=pulseaudio
+            - --filesystem=xdg-download
+            - --filesystem=xdg-videos
+          modules:
+            - name: animestream
+              buildsystem: simple
+              build-commands:
+                - cp -r bundle /app/animestream
+                - |
+                  cat > /app/bin/animestream << 'SCRIPT'
+                  #!/bin/bash
+                  exec /app/animestream/animestream "$@"
+                  SCRIPT
+                - chmod +x /app/bin/animestream
+                - install -Dm644 com.example.animestream.desktop /app/share/applications/com.example.animestream.desktop
+                - install -Dm644 icon.png /app/share/icons/hicolor/512x512/apps/com.example.animestream.png
+                - install -Dm644 com.example.animestream.metainfo.xml /app/share/metainfo/com.example.animestream.metainfo.xml
+              sources:
+                - type: dir
+                  path: build/linux/x64/release/bundle
+                  dest: bundle
+                - type: file
+                  path: com.example.animestream.desktop
+                - type: file
+                  path: icon.png
+                - type: file
+                  path: com.example.animestream.metainfo.xml
+          EOF
+          
+          # Build Flatpak
+          flatpak-builder --force-clean --repo=flatpak-repo build-dir com.example.animestream.yaml
+          
+          # Create single-file bundle
+          flatpak build-bundle flatpak-repo animestream-${{ needs.extract-version.outputs.version }}-x86_64.flatpak com.example.animestream
     
-    # Create desktop entry file
-    cat > com.example.animestream.desktop << 'EOF'
-    [Desktop Entry]
-    Name=AnimeStream
-    Comment=Watch anime with multiple sources
-    Exec=animestream
-    Icon=com.example.animestream
-    Type=Application
-    Categories=AudioVideo;Video;Player;
-    EOF
-    
-    # Create AppStream metadata
-    cat > com.example.animestream.metainfo.xml << 'EOF'
-    <?xml version="1.0" encoding="UTF-8"?>
-    <component type="desktop-application">
-      <id>com.example.animestream</id>
-      <name>AnimeStream</name>
-      <summary>Watch anime from multiple sources</summary>
-      <metadata_license>CC0-1.0</metadata_license>
-      <project_license>MIT</project_license>
-      <description>
-        <p>AnimeStream is a multi-source anime streaming application.</p>
-      </description>
-      <launchable type="desktop-id">com.example.animestream.desktop</launchable>
-      <provides>
-        <binary>animestream</binary>
-      </provides>
-    </component>
-    EOF
-    
-    # Copy icon (using logo.png from assets)
-    cp lib/assets/icons/logo.png icon.png
-    
-    # Create Flatpak manifest
-    cat > com.example.animestream.yaml << 'EOF'
-    app-id: com.example.animestream
-    runtime: org.freedesktop.Platform
-    runtime-version: '23.08'
-    sdk: org.freedesktop.Sdk
-    command: animestream
-    finish-args:
-      - --socket=wayland
-      - --socket=fallback-x11
-      - --share=ipc
-      - --share=network
-      - --device=dri
-      - --socket=pulseaudio
-      - --filesystem=xdg-download
-      - --filesystem=xdg-videos
-    modules:
-      - name: animestream
-        buildsystem: simple
-        build-commands:
-          - cp -r bundle /app/animestream
-          - |
-            cat > /app/bin/animestream << 'SCRIPT'
-            #!/bin/bash
-            exec /app/animestream/animestream "$@"
-            SCRIPT
-          - chmod +x /app/bin/animestream
-          - install -Dm644 com.example.animestream.desktop /app/share/applications/com.example.animestream.desktop
-          - install -Dm644 icon.png /app/share/icons/hicolor/512x512/apps/com.example.animestream.png
-          - install -Dm644 com.example.animestream.metainfo.xml /app/share/metainfo/com.example.animestream.metainfo.xml
-        sources:
-          - type: dir
-            path: build/linux/x64/release/bundle
-            dest: bundle
-          - type: file
-            path: com.example.animestream.desktop
-          - type: file
-            path: icon.png
-          - type: file
-            path: com.example.animestream.metainfo.xml
-    EOF
-    
-    # Build Flatpak
-    flatpak-builder --force-clean --repo=flatpak-repo build-dir com.example.animestream.yaml
-    
-    # Create single-file bundle
-    flatpak build-bundle flatpak-repo animestream-${{ needs.extract-version.outputs.version }}-x86_64.flatpak com.example.animestream
-    
-- name: Upload Flatpak artifact
-  uses: actions/upload-artifact@v3
-  with:
-    name: animestream-flatpak
-    path: animestream-${{ needs.extract-version.outputs.version }}-x86_64.flatpak
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
