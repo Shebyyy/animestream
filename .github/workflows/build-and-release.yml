@@ -399,6 +399,7 @@ jobs:
         with:
           name: linux-builds
           path: |
+            animestream-*.AppImage
             animestream-*.deb
             animestream-*.rpm
             animestream-*-linux-x64.zip
@@ -453,11 +454,8 @@ jobs:
         with:
           name: windows-builds
           path: |
-            build/windows/x64/runner/*.zip
-            build/windows/x64/installer/*.exe
-            build/installer/*.exe
-            build/windows/innosetup/*.exe
-            *.exe
+            animestream-*-windows-x64-portable.zip
+            build/windows/x64/installer/Release/*.exe
           retention-days: 30
 
 
@@ -557,7 +555,7 @@ jobs:
             artifacts/linux-builds/animestream-*.deb
             artifacts/linux-builds/animestream-*.rpm
             artifacts/linux-builds/animestream-*-linux-x64.zip
-            artifacts/windows-builds/animestream-*.zip
-            artifacts/windows-builds/animestream-*.exe
+            artifacts/windows-builds/*.zip
+            artifacts/windows-builds/*.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
