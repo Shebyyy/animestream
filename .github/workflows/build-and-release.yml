@@ -140,6 +140,7 @@ jobs:
           
   # LINUX BUILDS
   build-linux:
+    if: false   # ⛔ Linux build disabled
     name: Linux Build
     runs-on: ubuntu-latest
     needs: extract-version
