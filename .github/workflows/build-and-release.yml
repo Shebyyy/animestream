@@ -252,7 +252,9 @@ jobs:
             liblzma-dev \
             libstdc++-12-dev \
             libsecret-1-dev \
-            libwebkit2gtk-4.1-dev
+            libwebkit2gtk-4.1-dev \
+            flatpak-builder \
+            flatpak
 
       - name: Get Flutter version
         run: flutter --version
@@ -349,7 +351,7 @@ jobs:
 
           # Copy icon
           if [ -f "lib/assets/icons/logo.png" ]; then
-            cp lib/assets/icons/logo.png rpmbuild-root/usr/share/icons/hicolor/512x512/apps/animestream.png
+            cp lib/assets/icons/logo.png rpmbuild-root/usr/share/icons/hicolor/512x512/apps/animestream.png"
           fi
 
           # Create spec file
@@ -390,6 +392,26 @@ jobs:
           cd build/linux/x64/release
           zip -r ../../../animestream-${{ needs.extract-version.outputs.version }}-linux-x64.zip bundle/
 
+      - name: Create Flatpak
+        run: |
+          # Create Flatpak manifest
+          cat > com.example.animestream.yaml << EOF
+          app-id: com.example.animestream
+          runtime: org.freedesktop.Platform.Sdk
+          base: io.flutter.flutter-app
+          command: animestream
+          finish-args: --socket=wayland --share=ipc
+          cleanup:
+            /tmp/*
+          EOF
+
+          # Build Flatpak
+          flatpak-builder --force-cleanup --repo=flatpak-repo --install-deps-from=flathub:org.flutter.flutter-app/x86_64/stable com.example.animestream.yaml --ccache
+
+          # Compress Flatpak
+          cd flatpak-repo
+          tar czf ../animestream-${{ needs.extract-version.outputs.version }}-x86_64.flatpak .
+
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -398,6 +420,7 @@ jobs:
             animestream-*.deb
             animestream-*.rpm
             build/animestream-*-linux-x64.zip
+            animestream-*.flatpak
           retention-days: 30
 
   # WINDOWS BUILDS
@@ -486,7 +509,7 @@ jobs:
         run: |
           mkdir release-files
           find artifacts -type f \
-            \( -name "*.apk" -o -name "*.aab" -o -name "*.deb" -o -name "*.rpm" -o -name "*.zip" -o -name "*.exe" \) \
+            \( -name "*.apk" -o -name "*.aab" -o -name "*.deb" -o -name "*.rpm" -o -name "*.zip" -o -name "*.exe" -o -name "*.flatpak" \) \
             -exec cp {} release-files/ \;
 
           echo "Release files:"
