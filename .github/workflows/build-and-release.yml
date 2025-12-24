@@ -464,11 +464,12 @@ jobs:
     name: Create GitHub Release
     runs-on: ubuntu-latest
     needs:
-      - extract-version
-      - build-android-apk
-      - build-android-aab
-      - build-linux
-      - build-windows
+    - extract-version
+    - build-android-apk
+    - build-android-aab
+    - build-linux
+    - build-windows
+    - post-release-notes 
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.create_release == true || github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
     steps:
       - name: Clone repository
@@ -484,79 +485,27 @@ jobs:
           echo "Downloaded artifacts:"
           find artifacts -type f
 
-      - name: Generate Release Notes
-        id: release-notes
+
+
+      - name: Collect release assets
         run: |
-          if [ -n "${{ inputs.release_notes }}" ]; then
-            NOTES="${{ inputs.release_notes }}"
-          else
-            cat > release_notes.md << 'EOF'
-          # 🎬 animestream v${{ needs.extract-version.outputs.version }}
+          mkdir release-files
+          find artifacts -type f \
+            \( -name "*.apk" -o -name "*.aab" -o -name "*.deb" -o -name "*.rpm" -o -name "*.zip" -o -name "*.exe" \) \
+            -exec cp {} release-files/ \;
 
-          ## 📦 Download Options
-
-          ### Android
-          - **Universal APK**: Works on all devices (larger size)
-          - **Split APKs**: Choose your architecture (smaller size)
-            - `arm64-v8a`: Modern devices (ARM64)
-            - `armeabi-v7a`: Older devices (ARM32)
-            - `x86_64`: Emulators and x86 devices
-          - **AAB**: For Google Play Store
-
-          ### Linux
-          - **deb**: Debian/Ubuntu/Mint
-          - **rpm**: Fedora/openSUSE/RHEL
-          - **Zip**: Portable binary build
-
-          ### Windows
-          - **Installer**: EXE setup file with installation wizard
-          - **Portable Zip**: Extract and run, no installation required
-
-          ## 🚀 Installation
-
-          ### Android
-          Download the APK that matches your device architecture, then install it. You may need to enable "Unknown Sources" in your security settings.
-
-          ### Linux
-          - **deb**: `sudo dpkg -i animestream-*.deb`
-          - **rpm**: `sudo rpm -i animestream-*.rpm`
-
-          ### Windows
-          - **Installer**: Double-click the .exe file and follow the wizard
-          - **Portable**: Extract the zip and run animestream.exe
-
-          ## 📝 Changelog
-
-          See [changelog.md](https://github.com/Shebyyy/animestream/blob/master/changelog.md) for detailed changes.
-
-          ## ⚠️ Disclaimer
-
-          By using this app, you agree that the developer(s) of animestream is not responsible for any content within the app.
-          EOF
-            NOTES=$(cat release_notes.md)
-          fi
-          {
-            echo 'notes<<EOF'
-            echo "$NOTES"
-            echo EOF
-          } >> $GITHUB_OUTPUT
-
+          echo "Release files:"
+          ls -lh release-files
+          
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.extract-version.outputs.version }}
           name: animestream v${{ needs.extract-version.outputs.version }}
-          body: ${{ steps.release-notes.outputs.notes }}
+          body_path: CHANGELOG.md
           draft: false
           prerelease: false
-          files: |
-            artifacts/android-apks/animestream-*.apk
-            artifacts/android-aab/animestream-*.aab
-            artifacts/linux-builds/animestream-*.deb
-            artifacts/linux-builds/animestream-*.rpm
-            artifacts/linux-builds/animestream-*-linux-x64.zip
-            artifacts/windows-builds/*.zip
-            artifacts/windows-builds/*.exe
+          files: release-files/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -660,15 +609,3 @@ jobs:
           git add CHANGELOG.md
           git commit -m "Update changelog for version ${{ github.ref_name }}"
           git push origin HEAD:main
-
-      - name: Set Tag Variable
-        id: tag
-        run: echo "TAG=${{ github.ref_name }}" >> $GITHUB_ENV
-
-      - name: Create or Update Release
-        uses: ncipollo/release-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          bodyFile: CHANGELOG.md
-          tag: ${{ env.TAG }}
-          allowUpdates: true
