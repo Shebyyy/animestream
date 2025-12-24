@@ -396,9 +396,12 @@ jobs:
         run: |
           # Install Flatpak dependencies
           sudo apt-get update
-          sudo apt-get install -y flatpak flatpak-builder
+          sudo apt-get install -y flatpak flatpak-builder imagemagick
           sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
           sudo flatpak install -y flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
+          
+          # Resize icon to 512x512 (Flatpak requirement)
+          convert lib/assets/icons/logo.png -resize 512x512 icon.png
           
           # Create desktop entry file
           cat > com.example.animestream.desktop << 'EOF'
@@ -429,9 +432,6 @@ jobs:
             </provides>
           </component>
           EOF
-          
-          # Copy icon (using logo.png from assets)
-          cp lib/assets/icons/logo.png icon.png
           
           # Create Flatpak manifest
           cat > com.example.animestream.yaml << 'EOF'
@@ -481,7 +481,6 @@ jobs:
           
           # Create single-file bundle
           flatpak build-bundle flatpak-repo animestream-${{ needs.extract-version.outputs.version }}-x86_64.flatpak com.example.animestream
-    
     
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
