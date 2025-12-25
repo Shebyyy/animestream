@@ -63,6 +63,9 @@
 * [ac87b61](https://github.com/Shebyyy/animestream/commit/ac87b61): refactor and changes
 
 ### 🧹 Chores & Documentation
+* [1c0bdaa](https://github.com/Shebyyy/animestream/commit/1c0bdaa): chore: add iOS platform support (Flutter 3.29.0)
+* [aad96a6](https://github.com/Shebyyy/animestream/commit/aad96a6): chore: add macOS desktop support (Flutter 3.29.0)
+* [4171026](https://github.com/Shebyyy/animestream/commit/4171026): docs: update changelog for v1.4.2
 * [4922f0d](https://github.com/Shebyyy/animestream/commit/4922f0d): docs: remove placeholder role mentions
 * [30e9e37](https://github.com/Shebyyy/animestream/commit/30e9e37): chore: add build & release workflows with Discord notifications
 
