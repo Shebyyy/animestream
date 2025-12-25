@@ -136,22 +136,24 @@ jobs:
           format_section () {
             TITLE="$1"
             CONTENT="$2"
-      
+          
             TOTAL=$(echo "$CONTENT" | grep -c "^•" || echo 0)
             SHOWN=$(echo "$CONTENT" | grep "^•" | head -n $MAX)
-      
-            if [ "$TOTAL" -gt "$MAX" ]; then
-              EXTRA=$((TOTAL - MAX))
+          
+            if [ "$TOTAL" -gt 0 ]; then
               echo "**$TITLE**"
               echo "$SHOWN"
-              echo "*+ $EXTRA more commits*"
-              echo ""
-            elif [ "$TOTAL" -gt 0 ]; then
-              echo "**$TITLE**"
-              echo "$SHOWN"
+          
+              if [ "$TOTAL" -gt "$MAX" ]; then
+                EXTRA=$((TOTAL - MAX))
+                echo "*+ $EXTRA more commits*"
+              fi
+          
+              # 🔽 FORCE blank line after every category
               echo ""
             fi
           }
+
       
           NOTES=$(cat release_notes.txt | \
             sed -E 's/### (.*)/\n**\1**\n/g' | \
