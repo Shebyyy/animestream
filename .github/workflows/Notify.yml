@@ -168,14 +168,26 @@ jobs:
           CHORES=$(echo "$NOTES" | sed -n '/\*\*.*Chores/,/\*\*[^C]/p')
       
           DISCORD_NOTES=""
-          DISCORD_NOTES+=$(format_section "✨ New Features" "$FEATURES")
-          DISCORD_NOTES+=$(format_section "🐛 Bug Fixes" "$FIXES")
-          DISCORD_NOTES+=$(format_section "🔧 Refactors" "$REFACTORS")
-          DISCORD_NOTES+=$(format_section "🎨 Style Changes" "$STYLE")
-          DISCORD_NOTES+=$(format_section "⚡ Performance" "$PERF")
-          DISCORD_NOTES+=$(format_section "🧹 Chores" "$CHORES")
+
+          section=$(format_section "✨ New Features" "$FEATURES")
+          [ -n "$section" ] && DISCORD_NOTES+="$section"$'\n\n'
+
+          section=$(format_section "🐛 Bug Fixes" "$FIXES")
+          [ -n "$section" ] && DISCORD_NOTES+="$section"$'\n\n'
+
+          section=$(format_section "🔧 Refactors" "$REFACTORS")
+          [ -n "$section" ] && DISCORD_NOTES+="$section"$'\n\n'
+
+          section=$(format_section "🎨 Style Changes" "$STYLE")
+          [ -n "$section" ] && DISCORD_NOTES+="$section"$'\n\n'
+
+          section=$(format_section "⚡ Performance" "$PERF")
+          [ -n "$section" ] && DISCORD_NOTES+="$section"$'\n\n'
+
+          section=$(format_section "🧹 Chores" "$CHORES")
+          [ -n "$section" ] && DISCORD_NOTES+="$section"$'\n\n'
       
-          DISCORD_NOTES+="\n📋 [View full changelog on GitHub](https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }})"
+          DISCORD_NOTES+="\n\n📋 [View full changelog on GitHub](https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }})"
       
           echo "DISCORD_NOTES<<EOF" >> $GITHUB_ENV
           echo -e "$DISCORD_NOTES" >> $GITHUB_ENV
