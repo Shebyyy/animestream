@@ -72,6 +72,7 @@
 * [ac87b61](https://github.com/Shebyyy/animestream/commit/ac87b61): refactor and changes
 
 ### 🧹 Chores & Documentation
+* [1dd549e](https://github.com/Shebyyy/animestream/commit/1dd549e): docs: update changelog for v1.4.2
 * [43c8008](https://github.com/Shebyyy/animestream/commit/43c8008): docs: add comprehensive installation guide
 
 ---
