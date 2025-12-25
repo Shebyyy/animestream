@@ -28,7 +28,7 @@ jobs:
     steps:
       - name: Clone repository
         uses: actions/checkout@v4
-
+        
       - name: Extract version
         id: get-version
         run: |
@@ -63,13 +63,14 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Create default .env file
+      - name: Setup env File
+        env:
+          SIMKL_CLIENT_SECRET: ${{ secrets.SIMKL_CLIENT_SECRET }}
+          SIMKL_CLIENT_ID: ${{ secrets.SIMKL_CLIENT_ID }}
+        shell: bash
         run: |
-          if [ -f ".env_example" ]; then
-            cp .env_example .env
-          else
-            echo "# Empty env file for CI/CD" > .env
-          fi
+          echo "SIMKL_CLIENT_SECRET=$SIMKL_CLIENT_SECRET" > .env
+          echo "SIMKL_CLIENT_ID=$SIMKL_CLIENT_ID" >> .env
 
       - name: Decode and setup keystore
         env:
@@ -180,13 +181,14 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Create default .env file
+      - name: Setup env File
+        env:
+          SIMKL_CLIENT_SECRET: ${{ secrets.SIMKL_CLIENT_SECRET }}
+          SIMKL_CLIENT_ID: ${{ secrets.SIMKL_CLIENT_ID }}
+        shell: bash
         run: |
-          if [ -f ".env_example" ]; then
-            cp .env_example .env
-          else
-            echo "# Empty env file for CI/CD" > .env
-          fi
+          echo "SIMKL_CLIENT_SECRET=$SIMKL_CLIENT_SECRET" > .env
+          echo "SIMKL_CLIENT_ID=$SIMKL_CLIENT_ID" >> .env
 
       - name: Build Linux
         run: |
@@ -433,10 +435,14 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Create default .env file
-        shell: pwsh
+      - name: Setup env File
+        env:
+          SIMKL_CLIENT_SECRET: ${{ secrets.SIMKL_CLIENT_SECRET }}
+          SIMKL_CLIENT_ID: ${{ secrets.SIMKL_CLIENT_ID }}
+        shell: bash
         run: |
-          if (Test-Path ".env_example") { Copy-Item ".env_example" ".env" } else { "# Empty env file for CI/CD" | Out-File -Encoding UTF8 ".env" }
+          echo "SIMKL_CLIENT_SECRET=$SIMKL_CLIENT_SECRET" > .env
+          echo "SIMKL_CLIENT_ID=$SIMKL_CLIENT_ID" >> .env
 
       - name: Build Windows
         shell: pwsh
