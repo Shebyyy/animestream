@@ -187,7 +187,7 @@ jobs:
           section=$(format_section "🧹 Chores" "$CHORES")
           [ -n "$section" ] && DISCORD_NOTES+="$section"$'\n\n'
       
-          DISCORD_NOTES+="\n\n📋 [View full changelog on GitHub](https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }})"
+          DISCORD_NOTES+="\n📋 [View full changelog on GitHub](https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }})"
       
           echo "DISCORD_NOTES<<EOF" >> $GITHUB_ENV
           echo -e "$DISCORD_NOTES" >> $GITHUB_ENV
