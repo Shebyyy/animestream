@@ -126,6 +126,132 @@ jobs:
           path: |
             build/app/outputs/flutter-apk/animestream-*.apk
           retention-days: 30
+
+  # iOS BUILD (UNSIGNED)
+  build-ios:
+    name: iOS Build (Unsigned)
+    runs-on: macos-latest
+    needs: extract-version
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Setup env File
+        env:
+          SIMKL_CLIENT_SECRET: ${{ secrets.SIMKL_CLIENT_SECRET }}
+          SIMKL_CLIENT_ID: ${{ secrets.SIMKL_CLIENT_ID }}
+        shell: bash
+        run: |
+          echo "SIMKL_CLIENT_SECRET=$SIMKL_CLIENT_SECRET" > .env
+          echo "SIMKL_CLIENT_ID=$SIMKL_CLIENT_ID" >> .env
+
+      - name: Build iOS (unsigned)
+        run: |
+          flutter build ios \
+            --release \
+            --no-codesign \
+            --build-number=${{ needs.extract-version.outputs.version_code }} \
+            --build-name=${{ needs.extract-version.outputs.version }}
+
+      - name: Create unsigned IPA
+        run: |
+          cd build/ios/iphoneos
+          mkdir Payload
+          cp -r Runner.app Payload/
+          zip -r animestream-${{ needs.extract-version.outputs.version }}-ios-unsigned.ipa Payload
+          rm -rf Payload
+
+      - name: Upload iOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-builds
+          path: build/ios/iphoneos/animestream-*.ipa
+          retention-days: 30
+
+  # macOS BUILD
+  build-macos:
+    name: macOS Build
+    runs-on: macos-latest
+    needs: extract-version
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Setup env File
+        env:
+          SIMKL_CLIENT_SECRET: ${{ secrets.SIMKL_CLIENT_SECRET }}
+          SIMKL_CLIENT_ID: ${{ secrets.SIMKL_CLIENT_ID }}
+        shell: bash
+        run: |
+          echo "SIMKL_CLIENT_SECRET=$SIMKL_CLIENT_SECRET" > .env
+          echo "SIMKL_CLIENT_ID=$SIMKL_CLIENT_ID" >> .env
+
+      - name: Build macOS
+        run: |
+          flutter build macos \
+            --release \
+            --build-number=${{ needs.extract-version.outputs.version_code }} \
+            --build-name=${{ needs.extract-version.outputs.version }}
+
+      - name: Create macOS ZIP
+        run: |
+          cd build/macos/Build/Products/Release
+          zip -r ../../../../../animestream-${{ needs.extract-version.outputs.version }}-macos.zip animestream.app
+
+      - name: Create macOS DMG
+        run: |
+          # Install create-dmg
+          brew install create-dmg
+          
+          # Create DMG
+          create-dmg \
+            --volname "AnimeStream" \
+            --volicon "lib/assets/icons/logo.png" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 100 \
+            --icon "animestream.app" 200 190 \
+            --hide-extension "animestream.app" \
+            --app-drop-link 600 185 \
+            "animestream-${{ needs.extract-version.outputs.version }}-macos.dmg" \
+            "build/macos/Build/Products/Release/animestream.app" || \
+          create-dmg \
+            --volname "AnimeStream" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 100 \
+            --app-drop-link 600 185 \
+            "animestream-${{ needs.extract-version.outputs.version }}-macos.dmg" \
+            "build/macos/Build/Products/Release/animestream.app"
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-builds
+          path: |
+            animestream-*.dmg
+            animestream-*.zip
+          retention-days: 30
           
   # LINUX BUILDS
   build-linux:
@@ -463,6 +589,8 @@ jobs:
     needs:
     - extract-version
     - build-android-apk
+    - build-ios
+    - build-macos
     # - build-linux    # ⛔ Linux build disabled
     - build-windows
     - post-release-notes 
@@ -485,7 +613,7 @@ jobs:
         run: |
           mkdir release-files
           find artifacts -type f \
-            \( -name "*.apk" -o -name "*.deb" -o -name "*.rpm" -o -name "*.zip" -o -name "*.exe" -o -name "*.flatpak" \) \
+            \( -name "*.apk" -o -name "*.ipa" -o -name "*.dmg" -o -name "*.deb" -o -name "*.rpm" -o -name "*.zip" -o -name "*.exe" -o -name "*.flatpak" \) \
             -exec cp {} release-files/ \;
 
           echo "Release files:"
