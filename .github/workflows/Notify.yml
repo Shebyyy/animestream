@@ -10,7 +10,7 @@ on:
 jobs:
   notify:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' || github.event_name == 'push' }}
     steps:
       - name: Cloning repository
         uses: actions/checkout@v4
@@ -61,6 +61,7 @@ jobs:
           
           echo "Processing assets..."
           
+          # Initialize all asset variables
           APK_UNIVERSAL=""
           APK_ARM64=""
           APK_ARM32=""
@@ -72,12 +73,14 @@ jobs:
           LINUX_FLATPAK=""
           LINUX_PORTABLE=""
           
+          # Parse each asset
           while IFS= read -r line; do
             ASSET_URL=$(echo "$line" | jq -r '.browser_download_url')
             ASSET_SIZE=$(echo "$line" | jq -r '.size')
             FILE_NAME=$(basename "$ASSET_URL")
             SIZE_HR=$(bytes_to_hr "$ASSET_SIZE")
             
+            # Categorize assets
             case "$FILE_NAME" in
               *universal*.apk)
                 APK_UNIVERSAL="[📱 Universal APK]($ASSET_URL) \`$SIZE_HR\`"
@@ -112,6 +115,7 @@ jobs:
             esac
           done < <(jq -c '.assets[]' release.json)
           
+          # Export all variables to GitHub ENV
           echo "APK_UNIVERSAL=$APK_UNIVERSAL" >> $GITHUB_ENV
           echo "APK_ARM64=$APK_ARM64" >> $GITHUB_ENV
           echo "APK_ARM32=$APK_ARM32" >> $GITHUB_ENV
@@ -128,14 +132,16 @@ jobs:
       - name: Format Release Notes for Discord
         id: format_discord
         run: |
+          # Convert markdown to Discord format with clickable links
           DISCORD_NOTES=$(cat release_notes.txt | \
             sed -E 's/### (.*)/\n**\1**\n/g' | \
             sed -E 's|\* \[([a-f0-9]+)\]\((https://github.com/[^)]+)\): (.*)|\• [\1](\2) \3|g' | \
             sed 's/||//g' | \
-            sed 's/---//g')
+            sed 's/---.*//g')
           
+          # Truncate if too long (Discord limit is 4096 chars for embed description)
           if [ ${#DISCORD_NOTES} -gt 3900 ]; then
-            DISCORD_NOTES="${DISCORD_NOTES:0:3900}...\n\n[View full changelog on GitHub](https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }})"
+            DISCORD_NOTES="${DISCORD_NOTES:0:3900}..."$'\n\n'"[View full changelog on GitHub](https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }})"
           fi
           
           echo "DISCORD_NOTES<<EOF" >> $GITHUB_ENV
@@ -146,6 +152,7 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
+          # Determine role mention based on release type
           if [[ "${{ env.LATEST_TAG }}" == *alpha* ]]; then
             role_mention=""
           elif [[ "${{ env.LATEST_TAG }}" == *beta* ]]; then
@@ -154,6 +161,7 @@ jobs:
             role_mention="<@&YOUR_RELEASE_ROLE_ID>"
           fi
           
+          # Set color based on release type
           if [[ "${{ env.LATEST_TAG }}" == *alpha* ]]; then
             color=15844367
           elif [[ "${{ env.LATEST_TAG }}" == *beta* ]]; then
@@ -162,6 +170,7 @@ jobs:
             color=1754421
           fi
           
+          # Create Discord embed
           discord_data=$(jq -nc \
             --arg role "$role_mention" \
             --arg title "🚀 New Release: ${{ env.LATEST_TAG }}" \
@@ -172,6 +181,7 @@ jobs:
             --arg url "https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }}" \
             '{"content":$role,"embeds":[{"title":$title,"description":$description,"color":$color,"url":$url,"footer":{"text":$footer},"timestamp":$timestamp}]}')
           
+          # Send to Discord
           curl -H "Content-Type: application/json" \
             -X POST \
             -d "$discord_data" \
@@ -183,8 +193,10 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
+          # Build download message with proper newlines
           MESSAGE="## 📦 **Download ${{ env.LATEST_TAG }}**"$'\n\n'
           
+          # Android Section
           if [ -n "$APK_UNIVERSAL" ] || [ -n "$APK_ARM64" ] || [ -n "$APK_ARM32" ] || [ -n "$APK_X86" ]; then
             MESSAGE="${MESSAGE}**📱 Android**"$'\n'
             [ -n "$APK_UNIVERSAL" ] && MESSAGE="${MESSAGE}$APK_UNIVERSAL"$'\n'
@@ -194,6 +206,7 @@ jobs:
             MESSAGE="${MESSAGE}"$'\n'
           fi
           
+          # Windows Section
           if [ -n "$WINDOWS_SETUP" ] || [ -n "$WINDOWS_PORTABLE" ]; then
             MESSAGE="${MESSAGE}**🪟 Windows**"$'\n'
             [ -n "$WINDOWS_SETUP" ] && MESSAGE="${MESSAGE}$WINDOWS_SETUP"$'\n'
@@ -201,16 +214,20 @@ jobs:
             MESSAGE="${MESSAGE}"$'\n'
           fi
           
+          # Linux Section
           if [ -n "$LINUX_DEB" ] || [ -n "$LINUX_RPM" ] || [ -n "$LINUX_FLATPAK" ] || [ -n "$LINUX_PORTABLE" ]; then
             MESSAGE="${MESSAGE}**🐧 Linux**"$'\n'
             [ -n "$LINUX_DEB" ] && MESSAGE="${MESSAGE}$LINUX_DEB"$'\n'
             [ -n "$LINUX_RPM" ] && MESSAGE="${MESSAGE}$LINUX_RPM"$'\n'
             [ -n "$LINUX_FLATPAK" ] && MESSAGE="${MESSAGE}$LINUX_FLATPAK"$'\n'
             [ -n "$LINUX_PORTABLE" ] && MESSAGE="${MESSAGE}$LINUX_PORTABLE"$'\n'
+            MESSAGE="${MESSAGE}"$'\n'
           fi
           
-          MESSAGE="${MESSAGE}"$'\n'"[📋 View all assets on GitHub](https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }})"
+          # Add footer
+          MESSAGE="${MESSAGE}[📋 View all assets on GitHub](https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }})"
           
+          # Create and send Discord message
           PAYLOAD=$(jq -n --arg content "$MESSAGE" '{"content":$content}')
           
           curl -X POST "$DISCORD_WEBHOOK_URL" \
@@ -225,6 +242,9 @@ jobs:
           echo "✅ Release notification completed!"
           echo "════════════════════════════════════════"
           echo "📋 Release: ${{ env.LATEST_TAG }}"
-          echo "📦 Assets: Android, Windows, Linux (if available)"
+          echo "📦 Assets sent to Discord:"
+          [ -n "$APK_UNIVERSAL" ] && echo "   ✓ Android APKs"
+          [ -n "$WINDOWS_SETUP" ] && echo "   ✓ Windows builds"
+          [ -n "$LINUX_DEB" ] && echo "   ✓ Linux packages"
           echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }}"
           echo "════════════════════════════════════════"
