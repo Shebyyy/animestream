@@ -141,16 +141,15 @@ jobs:
         id: format_discord
         run: |
           # Convert markdown to Discord format
-          # Remove multiple asterisks and clean formatting
           DISCORD_NOTES=$(cat release_notes.txt | \
             sed -E 's/### (.*)/\n**\1**\n/g' | \
-            sed -E 's/\* \[([a-f0-9]+)\]\(.*\): (.*)/• `\1` \2/g' | \
+            sed -E 's|\* \[([a-f0-9]+)\]\((https://github.com/[^)]+)\): (.*)|\• [\1](\2) \3|g' | \
             sed 's/||//g' | \
             sed 's/---//g')
           
           # Truncate if too long (Discord limit is 4096 chars for embed description)
           if [ ${#DISCORD_NOTES} -gt 3900 ]; then
-            DISCORD_NOTES="${DISCORD_NOTES:0:3900}...\n\n*[View full changelog on GitHub](https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }})*"
+            DISCORD_NOTES="${DISCORD_NOTES:0:3900}...\n\n[View full changelog on GitHub](https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }})"
           fi
           
           echo "DISCORD_NOTES<<EOF" >> $GITHUB_ENV
@@ -165,9 +164,9 @@ jobs:
           if [[ "${{ env.LATEST_TAG }}" == *alpha* ]]; then
             role_mention=""  # No mention for alpha
           elif [[ "${{ env.LATEST_TAG }}" == *beta* ]]; then
-            role_mention=""  # Replace with actual role ID
+            role_mention="<@&YOUR_BETA_ROLE_ID>"  # Replace with actual role ID
           else
-            role_mention=""  # Replace with actual role ID
+            role_mention="<@&YOUR_RELEASE_ROLE_ID>"  # Replace with actual role ID
           fi
           
           # Set color based on release type
@@ -214,38 +213,225 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
-          # Build download message
-          MESSAGE="## 📦 **Download ${{ env.LATEST_TAG }}**\n\n"
+          # Build download message using echo -e for proper newlines
+          MESSAGE="## 📦 **Download ${{ env.LATEST_TAG }}**"
+
+      - name: Send Summary
+        run: |
+          echo "════════════════════════════════════════"
+          echo "✅ Release notification completed!"
+          echo "════════════════════════════════════════"
+          echo "📋 Release: ${{ env.LATEST_TAG }}"
+          echo "📦 Assets: Android, Windows, Linux (if available)"
+          echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }}"
+          echo "════════════════════════════════════════"
+\n\n'
           
           # Android Section
           if [ -n "$APK_UNIVERSAL" ] || [ -n "$APK_ARM64" ] || [ -n "$APK_ARM32" ] || [ -n "$APK_X86" ]; then
-            MESSAGE="${MESSAGE}**📱 Android**\n"
-            [ -n "$APK_UNIVERSAL" ] && MESSAGE="${MESSAGE}$APK_UNIVERSAL\n"
-            [ -n "$APK_ARM64" ] && MESSAGE="${MESSAGE}$APK_ARM64\n"
-            [ -n "$APK_ARM32" ] && MESSAGE="${MESSAGE}$APK_ARM32\n"
-            [ -n "$APK_X86" ] && MESSAGE="${MESSAGE}$APK_X86\n"
-            MESSAGE="${MESSAGE}\n"
+            MESSAGE="${MESSAGE}**📱 Android**"
+
+      - name: Send Summary
+        run: |
+          echo "════════════════════════════════════════"
+          echo "✅ Release notification completed!"
+          echo "════════════════════════════════════════"
+          echo "📋 Release: ${{ env.LATEST_TAG }}"
+          echo "📦 Assets: Android, Windows, Linux (if available)"
+          echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }}"
+          echo "════════════════════════════════════════"
+\n'
+            [ -n "$APK_UNIVERSAL" ] && MESSAGE="${MESSAGE}$APK_UNIVERSAL"
+
+      - name: Send Summary
+        run: |
+          echo "════════════════════════════════════════"
+          echo "✅ Release notification completed!"
+          echo "════════════════════════════════════════"
+          echo "📋 Release: ${{ env.LATEST_TAG }}"
+          echo "📦 Assets: Android, Windows, Linux (if available)"
+          echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }}"
+          echo "════════════════════════════════════════"
+\n'
+            [ -n "$APK_ARM64" ] && MESSAGE="${MESSAGE}$APK_ARM64"
+
+      - name: Send Summary
+        run: |
+          echo "════════════════════════════════════════"
+          echo "✅ Release notification completed!"
+          echo "════════════════════════════════════════"
+          echo "📋 Release: ${{ env.LATEST_TAG }}"
+          echo "📦 Assets: Android, Windows, Linux (if available)"
+          echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }}"
+          echo "════════════════════════════════════════"
+\n'
+            [ -n "$APK_ARM32" ] && MESSAGE="${MESSAGE}$APK_ARM32"
+
+      - name: Send Summary
+        run: |
+          echo "════════════════════════════════════════"
+          echo "✅ Release notification completed!"
+          echo "════════════════════════════════════════"
+          echo "📋 Release: ${{ env.LATEST_TAG }}"
+          echo "📦 Assets: Android, Windows, Linux (if available)"
+          echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }}"
+          echo "════════════════════════════════════════"
+\n'
+            [ -n "$APK_X86" ] && MESSAGE="${MESSAGE}$APK_X86"
+
+      - name: Send Summary
+        run: |
+          echo "════════════════════════════════════════"
+          echo "✅ Release notification completed!"
+          echo "════════════════════════════════════════"
+          echo "📋 Release: ${{ env.LATEST_TAG }}"
+          echo "📦 Assets: Android, Windows, Linux (if available)"
+          echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }}"
+          echo "════════════════════════════════════════"
+\n'
+            MESSAGE="${MESSAGE}"
+
+      - name: Send Summary
+        run: |
+          echo "════════════════════════════════════════"
+          echo "✅ Release notification completed!"
+          echo "════════════════════════════════════════"
+          echo "📋 Release: ${{ env.LATEST_TAG }}"
+          echo "📦 Assets: Android, Windows, Linux (if available)"
+          echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }}"
+          echo "════════════════════════════════════════"
+\n'
           fi
           
           # Windows Section
           if [ -n "$WINDOWS_SETUP" ] || [ -n "$WINDOWS_PORTABLE" ]; then
-            MESSAGE="${MESSAGE}**🪟 Windows**\n"
-            [ -n "$WINDOWS_SETUP" ] && MESSAGE="${MESSAGE}$WINDOWS_SETUP\n"
-            [ -n "$WINDOWS_PORTABLE" ] && MESSAGE="${MESSAGE}$WINDOWS_PORTABLE\n"
-            MESSAGE="${MESSAGE}\n"
+            MESSAGE="${MESSAGE}**🪟 Windows**"
+
+      - name: Send Summary
+        run: |
+          echo "════════════════════════════════════════"
+          echo "✅ Release notification completed!"
+          echo "════════════════════════════════════════"
+          echo "📋 Release: ${{ env.LATEST_TAG }}"
+          echo "📦 Assets: Android, Windows, Linux (if available)"
+          echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }}"
+          echo "════════════════════════════════════════"
+\n'
+            [ -n "$WINDOWS_SETUP" ] && MESSAGE="${MESSAGE}$WINDOWS_SETUP"
+
+      - name: Send Summary
+        run: |
+          echo "════════════════════════════════════════"
+          echo "✅ Release notification completed!"
+          echo "════════════════════════════════════════"
+          echo "📋 Release: ${{ env.LATEST_TAG }}"
+          echo "📦 Assets: Android, Windows, Linux (if available)"
+          echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }}"
+          echo "════════════════════════════════════════"
+\n'
+            [ -n "$WINDOWS_PORTABLE" ] && MESSAGE="${MESSAGE}$WINDOWS_PORTABLE"
+
+      - name: Send Summary
+        run: |
+          echo "════════════════════════════════════════"
+          echo "✅ Release notification completed!"
+          echo "════════════════════════════════════════"
+          echo "📋 Release: ${{ env.LATEST_TAG }}"
+          echo "📦 Assets: Android, Windows, Linux (if available)"
+          echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }}"
+          echo "════════════════════════════════════════"
+\n'
+            MESSAGE="${MESSAGE}"
+
+      - name: Send Summary
+        run: |
+          echo "════════════════════════════════════════"
+          echo "✅ Release notification completed!"
+          echo "════════════════════════════════════════"
+          echo "📋 Release: ${{ env.LATEST_TAG }}"
+          echo "📦 Assets: Android, Windows, Linux (if available)"
+          echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }}"
+          echo "════════════════════════════════════════"
+\n'
           fi
           
           # Linux Section
           if [ -n "$LINUX_DEB" ] || [ -n "$LINUX_RPM" ] || [ -n "$LINUX_FLATPAK" ] || [ -n "$LINUX_PORTABLE" ]; then
-            MESSAGE="${MESSAGE}**🐧 Linux**\n"
-            [ -n "$LINUX_DEB" ] && MESSAGE="${MESSAGE}$LINUX_DEB\n"
-            [ -n "$LINUX_RPM" ] && MESSAGE="${MESSAGE}$LINUX_RPM\n"
-            [ -n "$LINUX_FLATPAK" ] && MESSAGE="${MESSAGE}$LINUX_FLATPAK\n"
-            [ -n "$LINUX_PORTABLE" ] && MESSAGE="${MESSAGE}$LINUX_PORTABLE\n"
+            MESSAGE="${MESSAGE}**🐧 Linux**"
+
+      - name: Send Summary
+        run: |
+          echo "════════════════════════════════════════"
+          echo "✅ Release notification completed!"
+          echo "════════════════════════════════════════"
+          echo "📋 Release: ${{ env.LATEST_TAG }}"
+          echo "📦 Assets: Android, Windows, Linux (if available)"
+          echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }}"
+          echo "════════════════════════════════════════"
+\n'
+            [ -n "$LINUX_DEB" ] && MESSAGE="${MESSAGE}$LINUX_DEB"
+
+      - name: Send Summary
+        run: |
+          echo "════════════════════════════════════════"
+          echo "✅ Release notification completed!"
+          echo "════════════════════════════════════════"
+          echo "📋 Release: ${{ env.LATEST_TAG }}"
+          echo "📦 Assets: Android, Windows, Linux (if available)"
+          echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }}"
+          echo "════════════════════════════════════════"
+\n'
+            [ -n "$LINUX_RPM" ] && MESSAGE="${MESSAGE}$LINUX_RPM"
+
+      - name: Send Summary
+        run: |
+          echo "════════════════════════════════════════"
+          echo "✅ Release notification completed!"
+          echo "════════════════════════════════════════"
+          echo "📋 Release: ${{ env.LATEST_TAG }}"
+          echo "📦 Assets: Android, Windows, Linux (if available)"
+          echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }}"
+          echo "════════════════════════════════════════"
+\n'
+            [ -n "$LINUX_FLATPAK" ] && MESSAGE="${MESSAGE}$LINUX_FLATPAK"
+
+      - name: Send Summary
+        run: |
+          echo "════════════════════════════════════════"
+          echo "✅ Release notification completed!"
+          echo "════════════════════════════════════════"
+          echo "📋 Release: ${{ env.LATEST_TAG }}"
+          echo "📦 Assets: Android, Windows, Linux (if available)"
+          echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }}"
+          echo "════════════════════════════════════════"
+\n'
+            [ -n "$LINUX_PORTABLE" ] && MESSAGE="${MESSAGE}$LINUX_PORTABLE"
+
+      - name: Send Summary
+        run: |
+          echo "════════════════════════════════════════"
+          echo "✅ Release notification completed!"
+          echo "════════════════════════════════════════"
+          echo "📋 Release: ${{ env.LATEST_TAG }}"
+          echo "📦 Assets: Android, Windows, Linux (if available)"
+          echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }}"
+          echo "════════════════════════════════════════"
+\n'
           fi
           
           # Add footer
-          MESSAGE="${MESSAGE}\n[📋 View all assets on GitHub](https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }})"
+          MESSAGE="${MESSAGE}"
+
+      - name: Send Summary
+        run: |
+          echo "════════════════════════════════════════"
+          echo "✅ Release notification completed!"
+          echo "════════════════════════════════════════"
+          echo "📋 Release: ${{ env.LATEST_TAG }}"
+          echo "📦 Assets: Android, Windows, Linux (if available)"
+          echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }}"
+          echo "════════════════════════════════════════"
+\n'"[📋 View all assets on GitHub](https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }})"
           
           # Create and send Discord message
           PAYLOAD=$(jq -n \
