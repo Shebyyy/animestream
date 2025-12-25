@@ -110,13 +110,6 @@ jobs:
             --build-number=${{ needs.extract-version.outputs.version_code }} \
             --build-name=${{ needs.extract-version.outputs.version }}
 
-      - name: Build AAB
-        run: |
-          flutter build appbundle \
-            --release \
-            --build-number=${{ needs.extract-version.outputs.version_code }} \
-            --build-name=${{ needs.extract-version.outputs.version }}
-
       - name: Rename artifacts
         run: |
           cd build/app/outputs/flutter-apk
@@ -125,10 +118,6 @@ jobs:
           mv app-armeabi-v7a-release.apk animestream-${{ needs.extract-version.outputs.version }}-armeabi-v7a.apk 2>/dev/null || true
           mv app-arm64-v8a-release.apk animestream-${{ needs.extract-version.outputs.version }}-arm64-v8a.apk 2>/dev/null || true
           mv app-x86_64-release.apk animestream-${{ needs.extract-version.outputs.version }}-x86_64.apk 2>/dev/null || true
-          
-          # Rename AAB
-          cd ../../outputs/bundle/release
-          mv app-release.aab animestream-${{ needs.extract-version.outputs.version }}.aab
 
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v4
@@ -136,7 +125,6 @@ jobs:
           name: android-builds
           path: |
             build/app/outputs/flutter-apk/animestream-*.apk
-            build/app/outputs/bundle/release/animestream-*.aab
           retention-days: 30
           
   # LINUX BUILDS
@@ -497,7 +485,7 @@ jobs:
         run: |
           mkdir release-files
           find artifacts -type f \
-            \( -name "*.apk" -o -name "*.aab" -o -name "*.deb" -o -name "*.rpm" -o -name "*.zip" -o -name "*.exe" -o -name "*.flatpak" \) \
+            \( -name "*.apk" -o -name "*.deb" -o -name "*.rpm" -o -name "*.zip" -o -name "*.exe" -o -name "*.flatpak" \) \
             -exec cp {} release-files/ \;
 
           echo "Release files:"
