@@ -463,7 +463,7 @@ jobs:
     needs:
     - extract-version
     - build-android-apk
-    - build-linux
+    # - build-linux    # ⛔ Linux build disabled
     - build-windows
     - post-release-notes 
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.create_release == true || github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
@@ -511,7 +511,7 @@ jobs:
 
   post-release-notes:
     runs-on: ubuntu-latest
-    needs: [build-android-apk, build-linux, build-windows]
+    needs: extract-version
     permissions:
       contents: write
     steps:
@@ -602,6 +602,10 @@ jobs:
             echo -e "$CHORES" >> CHANGELOG.md
           fi
 
+          # Add footer
+          echo "---" >> CHANGELOG.md
+          echo "**Full Changelog**: $REPO_URL/compare/${{ env.prev_tag }}...v${{ needs.extract-version.outputs.version }}" >> CHANGELOG.md
+
       - name: Upload changelog
         uses: actions/upload-artifact@v4
         with:
@@ -610,8 +614,8 @@ jobs:
 
       - name: Commit and push changelog
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add CHANGELOG.md
-          git commit -m "Update changelog for version ${{ github.ref_name }}"
-          git push origin HEAD:master
+          git diff --staged --quiet || git commit -m "docs: update changelog for v${{ needs.extract-version.outputs.version }}"
+          git push origin HEAD:${{ github.event.repository.default_branch }} || echo "No changes to push"
