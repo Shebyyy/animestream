@@ -1,37 +1,51 @@
-name: Generate macOS Support (Flutter 3.29.0)
+name: Generate iOS Platform (Flutter 3.29.0)
 
 on:
   workflow_dispatch:
 
 jobs:
-  generate-macos:
+  generate-ios:
     runs-on: macos-latest
     permissions:
       contents: write
 
     steps:
-      - name: Checkout repo
+      # 1️⃣ Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Flutter 3.29.0
+      # 2️⃣ Setup Flutter 3.29.0
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: 3.29.0
           channel: stable
 
-      - name: Enable macOS & generate platform files
+      # 3️⃣ Enable iOS & generate platform files
+      - name: Enable iOS and generate project files
         run: |
-         flutter config --enable-macos-desktop
-         flutter create . --org com.example.animestream
+          flutter config --enable-ios
+          flutter create . --org com.shebyyy.animestream
 
-      - name: Ensure macOS deployment target is 10.15
+      # 4️⃣ Patch Podfile to avoid Swift bridging error (future-safe)
+      - name: Patch iOS Podfile (Swift fix)
         run: |
-          sed -i '' "s/platform :osx, .*/platform :osx, '10.15'/" macos/Podfile
+          cat >> ios/Podfile <<'EOF'
 
-      - name: Commit macOS files
+          post_install do |installer|
+            installer.pods_project.targets.each do |target|
+              target.build_configurations.each do |config|
+                config.build_settings['SWIFT_ENABLE_MODULE_INTERFACE'] = 'NO'
+              end
+            end
+          end
+          EOF
+
+      # 5️⃣ Commit generated iOS files
+      - name: Commit iOS platform files
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add macos
-          git commit -m "chore: add macOS desktop support (Flutter 3.29.0)" || echo "No changes to commit"
+          git add ios
+          git commit -m "chore: add iOS platform support (Flutter 3.29.0)" || echo "No changes to commit"
           git push
