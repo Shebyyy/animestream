@@ -130,99 +130,55 @@ jobs:
           echo "Assets processed successfully"
 
       - name: Format Release Notes for Discord
-        id: format_discord
         run: |
-          # Convert markdown to Discord format with clickable links
-          DISCORD_NOTES=$(cat release_notes.txt | \
+          MAX=5
+      
+          format_section () {
+            TITLE="$1"
+            CONTENT="$2"
+      
+            TOTAL=$(echo "$CONTENT" | grep -c "^•" || echo 0)
+            SHOWN=$(echo "$CONTENT" | grep "^•" | head -n $MAX)
+      
+            if [ "$TOTAL" -gt "$MAX" ]; then
+              EXTRA=$((TOTAL - MAX))
+              echo "**$TITLE**"
+              echo "$SHOWN"
+              echo "*+ $EXTRA more commits*"
+              echo ""
+            elif [ "$TOTAL" -gt 0 ]; then
+              echo "**$TITLE**"
+              echo "$SHOWN"
+              echo ""
+            fi
+          }
+      
+          NOTES=$(cat release_notes.txt | \
             sed -E 's/### (.*)/\n**\1**\n/g' | \
-            sed -E 's|\* \[([a-f0-9]+)\]\((https://github.com/[^)]+)\): (.*)|\• [\1](\2) \3|g' | \
-            sed 's/||//g' | \
-            sed 's/---.*//g')
-          
-          CHAR_COUNT=${#DISCORD_NOTES}
-          echo "Changelog character count: $CHAR_COUNT"
-          
-          # Discord embed description limit is 4096 chars
-          if [ $CHAR_COUNT -gt 3900 ]; then
-            echo "⚠️ Changelog too long ($CHAR_COUNT chars), truncating smartly..."
-            
-            # Extract sections
-            FEATURES=$(echo "$DISCORD_NOTES" | sed -n '/\*\*.*New Features/,/\*\*[^N]/p' | head -n -1 || echo "")
-            FIXES=$(echo "$DISCORD_NOTES" | sed -n '/\*\*.*Bug Fixes/,/\*\*[^B]/p' | head -n -1 || echo "")
-            REFACTORS=$(echo "$DISCORD_NOTES" | sed -n '/\*\*.*Refactors/,/\*\*[^R]/p' | head -n -1 || echo "")
-            STYLE=$(echo "$DISCORD_NOTES" | sed -n '/\*\*.*Style/,/\*\*[^S]/p' | head -n -1 || echo "")
-            PERF=$(echo "$DISCORD_NOTES" | sed -n '/\*\*.*Performance/,/\*\*[^P]/p' | head -n -1 || echo "")
-            CHORES=$(echo "$DISCORD_NOTES" | sed -n '/\*\*.*Chores/,/\*\*[^C]/p' | head -n -1 || echo "")
-            
-            # Count items in each section
-            FEATURE_COUNT=$(echo "$FEATURES" | grep -c "^•" 2>/dev/null || echo "0")
-            FIX_COUNT=$(echo "$FIXES" | grep -c "^•" 2>/dev/null || echo "0")
-            REFACTOR_COUNT=$(echo "$REFACTORS" | grep -c "^•" 2>/dev/null || echo "0")
-            STYLE_COUNT=$(echo "$STYLE" | grep -c "^•" 2>/dev/null || echo "0")
-            PERF_COUNT=$(echo "$PERF" | grep -c "^•" 2>/dev/null || echo "0")
-            CHORE_COUNT=$(echo "$CHORES" | grep -c "^•" 2>/dev/null || echo "0")
-            
-            # Build condensed version - show first 5 of each section
-            CONDENSED=""
-            
-            # New Features
-            if [ $FEATURE_COUNT -gt 0 ]; then
-              HEADER=$(echo "$FEATURES" | grep "^\*\*" | head -1)
-              ITEMS=$(echo "$FEATURES" | grep "^•" | head -5)
-              CONDENSED="${CONDENSED}${HEADER}\n${ITEMS}\n"
-              [ $FEATURE_COUNT -gt 5 ] && CONDENSED="${CONDENSED}*+ $((FEATURE_COUNT - 5)) more features*\n"
-            fi
-            
-            # Bug Fixes
-            if [ $FIX_COUNT -gt 0 ]; then
-              HEADER=$(echo "$FIXES" | grep "^\*\*" | head -1)
-              ITEMS=$(echo "$FIXES" | grep "^•" | head -5)
-              CONDENSED="${CONDENSED}\n${HEADER}\n${ITEMS}\n"
-              [ $FIX_COUNT -gt 5 ] && CONDENSED="${CONDENSED}*+ $((FIX_COUNT - 5)) more fixes*\n"
-            fi
-            
-            # Refactors
-            if [ $REFACTOR_COUNT -gt 0 ]; then
-              HEADER=$(echo "$REFACTORS" | grep "^\*\*" | head -1)
-              ITEMS=$(echo "$REFACTORS" | grep "^•" | head -5)
-              CONDENSED="${CONDENSED}\n${HEADER}\n${ITEMS}\n"
-              [ $REFACTOR_COUNT -gt 5 ] && CONDENSED="${CONDENSED}*+ $((REFACTOR_COUNT - 5)) more refactors*\n"
-            fi
-            
-            # Style Changes
-            if [ $STYLE_COUNT -gt 0 ]; then
-              HEADER=$(echo "$STYLE" | grep "^\*\*" | head -1)
-              ITEMS=$(echo "$STYLE" | grep "^•" | head -5)
-              CONDENSED="${CONDENSED}\n${HEADER}\n${ITEMS}\n"
-              [ $STYLE_COUNT -gt 5 ] && CONDENSED="${CONDENSED}*+ $((STYLE_COUNT - 5)) more style changes*\n"
-            fi
-            
-            # Performance Improvements
-            if [ $PERF_COUNT -gt 0 ]; then
-              HEADER=$(echo "$PERF" | grep "^\*\*" | head -1)
-              ITEMS=$(echo "$PERF" | grep "^•" | head -5)
-              CONDENSED="${CONDENSED}\n${HEADER}\n${ITEMS}\n"
-              [ $PERF_COUNT -gt 5 ] && CONDENSED="${CONDENSED}*+ $((PERF_COUNT - 5)) more improvements*\n"
-            fi
-            
-            # Chores
-            if [ $CHORE_COUNT -gt 0 ]; then
-              HEADER=$(echo "$CHORES" | grep "^\*\*" | head -1)
-              ITEMS=$(echo "$CHORES" | grep "^•" | head -5)
-              CONDENSED="${CONDENSED}\n${HEADER}\n${ITEMS}\n"
-              [ $CHORE_COUNT -gt 5 ] && CONDENSED="${CONDENSED}*+ $((CHORE_COUNT - 5)) more chores*\n"
-            fi
-            
-            # Add link to full changelog
-            CONDENSED="${CONDENSED}\n📋 [View full changelog on GitHub](https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }})"
-            
-            DISCORD_NOTES="$CONDENSED"
-            echo "Truncated to smart summary"
-          fi
-          
+            sed -E 's|\* \[([a-f0-9]+)\]\((https://github.com/[^)]+)\): (.*)|• [\1](\2) \3|g' | \
+            sed 's/||//g' | sed 's/---.*//g')
+      
+          FEATURES=$(echo "$NOTES" | sed -n '/\*\*.*New Features/,/\*\*[^N]/p')
+          FIXES=$(echo "$NOTES" | sed -n '/\*\*.*Bug Fixes/,/\*\*[^B]/p')
+          REFACTORS=$(echo "$NOTES" | sed -n '/\*\*.*Refactors/,/\*\*[^R]/p')
+          STYLE=$(echo "$NOTES" | sed -n '/\*\*.*Style/,/\*\*[^S]/p')
+          PERF=$(echo "$NOTES" | sed -n '/\*\*.*Performance/,/\*\*[^P]/p')
+          CHORES=$(echo "$NOTES" | sed -n '/\*\*.*Chores/,/\*\*[^C]/p')
+      
+          DISCORD_NOTES=""
+          DISCORD_NOTES+=$(format_section "✨ New Features" "$FEATURES")
+          DISCORD_NOTES+=$(format_section "🐛 Bug Fixes" "$FIXES")
+          DISCORD_NOTES+=$(format_section "🔧 Refactors" "$REFACTORS")
+          DISCORD_NOTES+=$(format_section "🎨 Style Changes" "$STYLE")
+          DISCORD_NOTES+=$(format_section "⚡ Performance" "$PERF")
+          DISCORD_NOTES+=$(format_section "🧹 Chores" "$CHORES")
+      
+          DISCORD_NOTES+="\n📋 [View full changelog on GitHub](https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }})"
+      
           echo "DISCORD_NOTES<<EOF" >> $GITHUB_ENV
           echo -e "$DISCORD_NOTES" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
+
 
       - name: Send Release Announcement to Discord
         env:
