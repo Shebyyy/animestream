@@ -83,34 +83,34 @@ jobs:
             # Categorize assets
             case "$FILE_NAME" in
               *universal*.apk)
-                APK_UNIVERSAL="[📱 Universal APK]($ASSET_URL) \`$SIZE_HR\`"
+                APK_UNIVERSAL="[Universal APK]($ASSET_URL) \`$SIZE_HR\`"
                 ;;
               *arm64-v8a*.apk)
-                APK_ARM64="[📱 ARM64 APK]($ASSET_URL) \`$SIZE_HR\`"
+                APK_ARM64="[ARM64 APK]($ASSET_URL) \`$SIZE_HR\`"
                 ;;
               *armeabi-v7a*.apk)
-                APK_ARM32="[📱 ARM32 APK]($ASSET_URL) \`$SIZE_HR\`"
+                APK_ARM32="[ARM32 APK]($ASSET_URL) \`$SIZE_HR\`"
                 ;;
               *x86_64*.apk)
-                APK_X86="[📱 x86_64 APK]($ASSET_URL) \`$SIZE_HR\`"
+                APK_X86="[x86_64 APK]($ASSET_URL) \`$SIZE_HR\`"
                 ;;
               *.exe)
-                WINDOWS_SETUP="[🪟 Windows Installer]($ASSET_URL) \`$SIZE_HR\`"
+                WINDOWS_SETUP="[Windows Installer]($ASSET_URL) \`$SIZE_HR\`"
                 ;;
               *windows*portable*.zip)
-                WINDOWS_PORTABLE="[🪟 Windows Portable]($ASSET_URL) \`$SIZE_HR\`"
+                WINDOWS_PORTABLE="[Windows Portable]($ASSET_URL) \`$SIZE_HR\`"
                 ;;
               *.deb)
-                LINUX_DEB="[🐧 Linux DEB]($ASSET_URL) \`$SIZE_HR\`"
+                LINUX_DEB="[Linux DEB]($ASSET_URL) \`$SIZE_HR\`"
                 ;;
               *.rpm)
-                LINUX_RPM="[🐧 Linux RPM]($ASSET_URL) \`$SIZE_HR\`"
+                LINUX_RPM="[Linux RPM]($ASSET_URL) \`$SIZE_HR\`"
                 ;;
               *.flatpak)
-                LINUX_FLATPAK="[🐧 Linux Flatpak]($ASSET_URL) \`$SIZE_HR\`"
+                LINUX_FLATPAK="[Linux Flatpak]($ASSET_URL) \`$SIZE_HR\`"
                 ;;
               *linux*x64*.zip)
-                LINUX_PORTABLE="[🐧 Linux Portable]($ASSET_URL) \`$SIZE_HR\`"
+                LINUX_PORTABLE="[Linux Portable]($ASSET_URL) \`$SIZE_HR\`"
                 ;;
             esac
           done < <(jq -c '.assets[]' release.json)
@@ -139,13 +139,89 @@ jobs:
             sed 's/||//g' | \
             sed 's/---.*//g')
           
-          # Truncate if too long (Discord limit is 4096 chars for embed description)
-          if [ ${#DISCORD_NOTES} -gt 3900 ]; then
-            DISCORD_NOTES="${DISCORD_NOTES:0:3900}..."$'\n\n'"[View full changelog on GitHub](https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }})"
+          CHAR_COUNT=${#DISCORD_NOTES}
+          echo "Changelog character count: $CHAR_COUNT"
+          
+          # Discord embed description limit is 4096 chars
+          if [ $CHAR_COUNT -gt 3900 ]; then
+            echo "⚠️ Changelog too long ($CHAR_COUNT chars), truncating smartly..."
+            
+            # Extract sections
+            FEATURES=$(echo "$DISCORD_NOTES" | sed -n '/\*\*.*New Features/,/\*\*[^N]/p' | head -n -1 || echo "")
+            FIXES=$(echo "$DISCORD_NOTES" | sed -n '/\*\*.*Bug Fixes/,/\*\*[^B]/p' | head -n -1 || echo "")
+            REFACTORS=$(echo "$DISCORD_NOTES" | sed -n '/\*\*.*Refactors/,/\*\*[^R]/p' | head -n -1 || echo "")
+            STYLE=$(echo "$DISCORD_NOTES" | sed -n '/\*\*.*Style/,/\*\*[^S]/p' | head -n -1 || echo "")
+            PERF=$(echo "$DISCORD_NOTES" | sed -n '/\*\*.*Performance/,/\*\*[^P]/p' | head -n -1 || echo "")
+            CHORES=$(echo "$DISCORD_NOTES" | sed -n '/\*\*.*Chores/,/\*\*[^C]/p' | head -n -1 || echo "")
+            
+            # Count items in each section
+            FEATURE_COUNT=$(echo "$FEATURES" | grep -c "^•" 2>/dev/null || echo "0")
+            FIX_COUNT=$(echo "$FIXES" | grep -c "^•" 2>/dev/null || echo "0")
+            REFACTOR_COUNT=$(echo "$REFACTORS" | grep -c "^•" 2>/dev/null || echo "0")
+            STYLE_COUNT=$(echo "$STYLE" | grep -c "^•" 2>/dev/null || echo "0")
+            PERF_COUNT=$(echo "$PERF" | grep -c "^•" 2>/dev/null || echo "0")
+            CHORE_COUNT=$(echo "$CHORES" | grep -c "^•" 2>/dev/null || echo "0")
+            
+            # Build condensed version - show first 5 of each section
+            CONDENSED=""
+            
+            # New Features
+            if [ $FEATURE_COUNT -gt 0 ]; then
+              HEADER=$(echo "$FEATURES" | grep "^\*\*" | head -1)
+              ITEMS=$(echo "$FEATURES" | grep "^•" | head -5)
+              CONDENSED="${CONDENSED}${HEADER}\n${ITEMS}\n"
+              [ $FEATURE_COUNT -gt 5 ] && CONDENSED="${CONDENSED}*+ $((FEATURE_COUNT - 5)) more features*\n"
+            fi
+            
+            # Bug Fixes
+            if [ $FIX_COUNT -gt 0 ]; then
+              HEADER=$(echo "$FIXES" | grep "^\*\*" | head -1)
+              ITEMS=$(echo "$FIXES" | grep "^•" | head -5)
+              CONDENSED="${CONDENSED}\n${HEADER}\n${ITEMS}\n"
+              [ $FIX_COUNT -gt 5 ] && CONDENSED="${CONDENSED}*+ $((FIX_COUNT - 5)) more fixes*\n"
+            fi
+            
+            # Refactors
+            if [ $REFACTOR_COUNT -gt 0 ]; then
+              HEADER=$(echo "$REFACTORS" | grep "^\*\*" | head -1)
+              ITEMS=$(echo "$REFACTORS" | grep "^•" | head -5)
+              CONDENSED="${CONDENSED}\n${HEADER}\n${ITEMS}\n"
+              [ $REFACTOR_COUNT -gt 5 ] && CONDENSED="${CONDENSED}*+ $((REFACTOR_COUNT - 5)) more refactors*\n"
+            fi
+            
+            # Style Changes
+            if [ $STYLE_COUNT -gt 0 ]; then
+              HEADER=$(echo "$STYLE" | grep "^\*\*" | head -1)
+              ITEMS=$(echo "$STYLE" | grep "^•" | head -5)
+              CONDENSED="${CONDENSED}\n${HEADER}\n${ITEMS}\n"
+              [ $STYLE_COUNT -gt 5 ] && CONDENSED="${CONDENSED}*+ $((STYLE_COUNT - 5)) more style changes*\n"
+            fi
+            
+            # Performance Improvements
+            if [ $PERF_COUNT -gt 0 ]; then
+              HEADER=$(echo "$PERF" | grep "^\*\*" | head -1)
+              ITEMS=$(echo "$PERF" | grep "^•" | head -5)
+              CONDENSED="${CONDENSED}\n${HEADER}\n${ITEMS}\n"
+              [ $PERF_COUNT -gt 5 ] && CONDENSED="${CONDENSED}*+ $((PERF_COUNT - 5)) more improvements*\n"
+            fi
+            
+            # Chores
+            if [ $CHORE_COUNT -gt 0 ]; then
+              HEADER=$(echo "$CHORES" | grep "^\*\*" | head -1)
+              ITEMS=$(echo "$CHORES" | grep "^•" | head -5)
+              CONDENSED="${CONDENSED}\n${HEADER}\n${ITEMS}\n"
+              [ $CHORE_COUNT -gt 5 ] && CONDENSED="${CONDENSED}*+ $((CHORE_COUNT - 5)) more chores*\n"
+            fi
+            
+            # Add link to full changelog
+            CONDENSED="${CONDENSED}\n📋 [View full changelog on GitHub](https://github.com/${{ github.repository }}/releases/tag/${{ env.LATEST_TAG }})"
+            
+            DISCORD_NOTES="$CONDENSED"
+            echo "Truncated to smart summary"
           fi
           
           echo "DISCORD_NOTES<<EOF" >> $GITHUB_ENV
-          echo "$DISCORD_NOTES" >> $GITHUB_ENV
+          echo -e "$DISCORD_NOTES" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
       - name: Send Release Announcement to Discord
@@ -163,11 +239,11 @@ jobs:
           
           # Set color based on release type
           if [[ "${{ env.LATEST_TAG }}" == *alpha* ]]; then
-            color=15844367
+            color=15844367  # Orange
           elif [[ "${{ env.LATEST_TAG }}" == *beta* ]]; then
-            color=15105570
+            color=15105570  # Gold
           else
-            color=1754421
+            color=1754421   # Green
           fi
           
           # Create Discord embed
