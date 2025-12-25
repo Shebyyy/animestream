@@ -74,3 +74,5 @@
 ### 🧹 Chores & Documentation
 * [43c8008](https://github.com/Shebyyy/animestream/commit/43c8008): docs: add comprehensive installation guide
 
+---
+**Full Changelog**: https://github.com/Shebyyy/animestream/compare/5fecc3929cb7ecbdcf809811e8aec0f78b302f51...v1.4.2
