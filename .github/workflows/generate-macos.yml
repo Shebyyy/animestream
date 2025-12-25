@@ -21,8 +21,8 @@ jobs:
 
       - name: Enable macOS & generate platform files
         run: |
-          flutter config --enable-macos-desktop
-          flutter create .
+         flutter config --enable-macos-desktop
+         flutter create . --org com.example.animestream
 
       - name: Ensure macOS deployment target is 10.15
         run: |
