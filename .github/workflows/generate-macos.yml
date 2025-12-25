@@ -1,0 +1,37 @@
+name: Generate macOS Support (Flutter 3.29.0)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate-macos:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter 3.29.0
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.29.0
+          channel: stable
+
+      - name: Enable macOS & generate platform files
+        run: |
+          flutter config --enable-macos-desktop
+          flutter create .
+
+      - name: Ensure macOS deployment target is 10.15
+        run: |
+          sed -i '' "s/platform :osx, .*/platform :osx, '10.15'/" macos/Podfile
+
+      - name: Commit macOS files
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add macos
+          git commit -m "chore: add macOS desktop support (Flutter 3.29.0)" || echo "No changes to commit"
+          git push
